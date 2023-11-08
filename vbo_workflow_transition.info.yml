@@ -1,0 +1,8 @@
+name: VBO Workflow Transition
+type: module
+description: Provides a views bulk operation action that can transition entities that are part of a workflow.
+package: Custom
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:workflows
+  - drupal:content_moderation
