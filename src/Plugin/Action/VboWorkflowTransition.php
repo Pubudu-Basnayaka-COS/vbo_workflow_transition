@@ -14,6 +14,7 @@ use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\views\Views;
 use Drupal\views_bulk_operations\Action\ViewsBulkOperationsActionBase;
 use Drupal\workflows\WorkflowInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -252,6 +253,14 @@ class VboWorkflowTransition extends ViewsBulkOperationsActionBase implements Con
     // Remove the submit button, we'll use individual ones for each group.
     unset($form['actions']['submit']);
     $storage = $form_state->getStorage();
+    // If the list of entities to worked on is empty, this probably means that either:
+    // * The view does not support passing entities correctly
+    // * Or, they selected 'All pages of the results'.
+    // If this is the case, instead load all pages of results from the view and put
+    // every entity into the list.
+    if (empty($storage['views_bulk_operations']['list'])) {
+      $storage['views_bulk_operations']['list'] = self::getAllResultsFromViewAsVboList($storage['views_bulk_operations']);
+    }
     if (empty($storage['views_bulk_operations']['list'])) {
       return $this->unsupported($form);
     }
@@ -363,6 +372,42 @@ class VboWorkflowTransition extends ViewsBulkOperationsActionBase implements Con
     }
 
     return $form;
+  }
+
+  /**
+   * Retrieve all results from a VBO view submission.
+   *
+   * @param array $vbo
+   *   This is the form storage key of views_bulk_operations.
+   *
+   * @return array
+   *   An array that is suitable to be used as the items to act on.
+   */
+  protected function getAllResultsFromViewAsVboList(array $vbo): array {
+    $view = Views::getView($vbo['view_id']);
+    if (!isset($view)) {
+      return [];
+    }
+    $view->setDisplay($vbo['display_id']);
+    // This passes back the exact same parameters the original view
+    // was given for filtering.
+    $view->setExposedInput($vbo['exposed_input'] ?? []);
+    // This returns all pages.
+    $view->setItemsPerPage(0);
+
+    $view->execute();
+    $base_field = $view->storage->get('base_field');
+    $results = $view->result;
+    $list = [];
+    foreach ($results as $result_row) {
+      $list[] = [
+        $result_row->{$base_field},
+        $result_row->_entity->language()->getId(),
+        $result_row->_entity->getEntityTypeId(),
+        $result_row->_entity->id()
+      ];
+    }
+    return $list;
   }
 
   /**

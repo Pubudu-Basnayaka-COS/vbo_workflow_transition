@@ -4,5 +4,7 @@ description: Provides a views bulk operation action that can transition entities
 package: Custom
 core_version_requirement: ^9 || ^10
 dependencies:
-  - drupal:workflows
   - drupal:content_moderation
+  - drupal:views
+  - drupal:views_bulk_operations
+  - drupal:workflows
