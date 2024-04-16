@@ -1,0 +1,7 @@
+{
+  "name": "drupal/vbo_workflow_transition",
+  "type": "drupal-module",
+  "description": "vbo_workflow_transition module for Drupal.",
+  "homepage": "http://drupal.org/project/vbo_workflow_transition",
+  "license": "GPL-2.0-or-later"
+}
